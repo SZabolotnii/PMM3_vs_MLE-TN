@@ -18,34 +18,68 @@
 
 ### 1.1 Мотивація
 
-Класичний метод найменших квадратів (МНК) є оптимальним лише при гауссовому розподілі похибок. На практиці в економетрії, інженерії та природничих науках похибки часто мають симетричні, але негауссові розподіли — зокрема платикуртичні (від'ємний ексцес, γ₄ < 0) або лептокуртичні (γ₄ > 0). Ігнорування цього факту призводить до неефективного оцінювання.
+Класичний метод найменших квадратів (МНК), запропонований Гаусом (1809), є оптимальним лінійним незміщеним оцінювачем (BLUE) за умови гауссового розподілу похибок. Проте Cox і Hinkley (1968) показали, що ефективність МНК суттєво залежить від форми розподілу похибок: при відхиленні від нормальності МНК втрачає асимптотичну оптимальність, тоді як альтернативні оцінювачі, що використовують старші моменти, можуть забезпечити значно нижчу дисперсію.
 
-Одним із важливих класів симетричних негауссових розподілів є **двочастинний нормальний розподіл** (Two-piece Normal, TN), уведений Джоном (1982) та досліджений Саліносом та ін. (2023). TN охоплює широкий спектр форм: від майже гауссового (λ ≈ 0) до різко бімодального (λ ≫ 1.2), при цьому завжди залишаючись симетричним (якщо масштабовано відповідним чином).
+На практиці в метрології, медицині, економетриці та природничих науках похибки вимірювань часто мають **симетричні, але негауссові** розподіли. Зокрема, платикуртичні розподіли (від'ємний нормований ексцес γ₄ < 0) виникають: при вимірюваннях з обмеженим діапазоном (датчики, кутові вимірювання), в гістограмах залишків регресії, де відгук обмежений природними межами (розміри, концентрації), при агрегуванні декількох джерел похибок рівномірного типу. Ganguly (2014) та Andargie і Rao (2013) зазначають, що ігнорування платикуртичності систематично завищує дисперсію оцінок і звужує довірчі інтервали надмірно або недостатньо — залежно від знаку γ₄.
 
-Існують два принципово різні підходи до підвищення ефективності оцінювання при TN-похибках:
+Одним із важливих класів симетричних негауссових розподілів є **двочастинний нормальний розподіл** (Two-piece Normal, TN), уведений John (1982) та досліджений Salinas et al. (2023). TN охоплює широкий спектр форм — від майже гауссового (λ ≈ 0) до різко бімодального (λ ≫ 1/√2 ≈ 0.707), при цьому завжди залишаючись симетричним. Завдяки цьому TN є природним бенчмарком для дослідження поведінки оцінювачів у широкому діапазоні γ₄ ∈ (−2, 0).
 
-1. **Параметричний (MLE-TN)**: оцінює всі параметри (β, η, λ) спільно, використовуючи повну правдоподібність. Оптимальний при правильній специфікації, але чутливий до неправильної форми розподілу.
-2. **Напівпараметричний (PMM3)**: використовує лише вибіркові моменти для корекції МНК-оцінки. Не потребує знання форми розподілу, але дає меншу теоретичну ефективність.
+Існують три принципово різні підходи до підвищення ефективності оцінювання при негауссових похибках:
+
+1. **Параметричний (MLE-TN)**: оцінює всі параметри (**β**, η, λ) спільно, використовуючи повну правдоподібність TN. Досягає межі Крамера–Рао при правильній специфікації, але чутливий до хибної специфікації форми розподілу (Huber, 1967; White, 1982) та схильний до надмірної параметризації при малих вибірках.
+2. **Напівпараметричний (PMM3)**: використовує лише вибіркові моменти 2-го, 4-го та 6-го порядків для корекції МНК-оцінки. Не потребує знання форми розподілу, стійкий до хибної специфікації, але теоретично поступається MLE-TN при правильній специфікації.
+3. **Непараметричний та робастний**: зважена МНК (WLS), регресія з мінімумом суми абсолютних відхилень (LAD, Narula та Wellington, 1982), квантильна регресія (Koenker та Hallock, 2001), адаптивний MLE (Stone, 1975). Ці підходи не використовують явно структуру моментів і можуть бути менш ефективними при відомій симетрії.
+
+Дана робота зосереджується на порівнянні підходів 1 і 2 в рамках TN-моделі та дає відповідь на практичне питання: **коли і наскільки PMM3 краще за MLE-TN і МНК?**
 
 ### 1.2 Огляд літератури
 
-**Метод поліноміальної максимізації (МПП/PMM)** розроблений Кунченком і Легою (1992) для оцінювання параметрів стаціонарних випадкових послідовностей. Метод ґрунтується на максимізації поліноміальної функції від спостережень і дозволяє врахувати старші кумулянти розподілу.
+#### 1.2.1 МНК при негауссових похибках
 
-Заболотній та ін. (2018) застосували PMM2 (S = 2) до лінійної регресії з асиметричними похибками і показали теоретичну перевагу: g₂ = 1 − c₃²/(2 + c₄), де c₃, c₄ — нормовані кумулянти. PMM3 (S = 3) є природним узагальненням для симетричних розподілів (c₃ = 0), де g₂ = 1 і вдосконалення можливе лише через кумулянти 4-го та 6-го порядків.
+Питання ефективності МНК за умов негауссових похибок досліджується починаючи з Gauss (1809). Cox і Hinkley (1968) отримали загальний вираз для асимптотичної відносної ефективності МНК відносно оптимального оцінювача через кумулянти розподілу. Zeckhauser і Thompson (1970) показали, що при несиметричних похибках МНК може бути значно менш ефективним за максимально правдоподібні оцінки. Tiku et al. (2001) систематично вивчили оцінювання параметрів лінійної регресії при симетричних негауссових похибках (сімейство Пірсона) і отримали аналітичні вирази для середньоквадратичної похибки.
 
-Для часових рядів PMM2 застосовано до авторегресійних (Zabotniy та ін., 2022) та ковзних (2023) моделей, а також до ARIMA (Zabolotnii, 2025).
+Для платикуртичних симетричних розподілів важливий внесок зробили Andargie і Rao (2013), які дослідили лінійну модель із двопараметричним симетричним платикуртичним розподілом похибок, та Ganguly (2014), який порівняв кілька оцінювачів для медичних даних із симетричними негауссовими залишками. Обидві роботи підтверджують: при γ₄ < −0.5 класичний МНК суттєво програє оптимальному оцінювачу.
 
-**Двочастинний нормальний розподіл** у контексті лінійної регресії досліджено Саліносом та ін. (2023), які запропонували MLE-оцінювання та навели таблиці кумулянтів для різних λ.
+#### 1.2.2 Робастні та альтернативні методи
 
-### 1.3 Внесок роботи
+Стандартна альтернатива МНК при товстих хвостах — робастна регресія Г'юбера (Huber, 1967) та LAD-регресія (Narula і Wellington, 1982), що оптимальна при розподілі Лапласа. Для квантильних задач розроблена квантильна регресія Koenker і Hallock (2001). Ці методи орієнтовані переважно на **лептокуртичні** (товстохвості) розподіли (γ₄ > 0), тоді як для **платикуртичних** (γ₄ < 0) жоден зі стандартних методів не оптимальний. Stone (1975) запропонував адаптивний максимально правдоподібний оцінювач місця розташування, що асимптотично ефективний при будь-якому симетричному розподілі, однак потребує непараметричного оцінювання щільності.
 
-Дана робота є першою, яка систематично порівнює PMM3 і MLE-TN для лінійної регресії з TN-похибками. Основні результати:
+На рівні напівпараметричних підходів Ma et al. (2021) розробили регресію із неспецифікованим розподілом похибок на основі суміші компонент, довівши консистентність та асимптотичну нормальність. Цей метод перевершує MLE при хибній специфікації нормальності, але обчислювально складніший за PMM.
 
-1. **Теоретичне порівняння**: аналітичні вирази для g₃(λ) та ARE(MLE-TN/OLS)(λ).
-2. **Монте-Карло підтвердження**: емпіричні ARE, g₃ для λ ∈ {0.5, 1, 1.5, 2, 3, 5}, n ∈ {46, 100, 200, 500}.
-3. **Аналіз робастності**: поведінка PMM3 та MLE-TN при неправильній специфікації.
-4. **Емпіричний поріг**: γ₄ ≲ −0.7 як практичне правило для вибору PMM3 над МНК.
-5. **Реальні дані**: підтвердження теорії на прикладі ірисів Фішера.
+#### 1.2.3 Параметричні підходи для TN та споріднених розподілів
+
+Двочастинний нормальний розподіл (TN) введено John (1982) і пізніше досліджено у контексті статистики асиметричних розподілів (Azzalini, 1985; Leisen et al., 2020). Salinas et al. (2023) запропонували байєсівський та частотницький підхід до лінійної регресії з TN-похибками, розробили таблиці кумулянтів і дослідили MLE-оцінювання через L-BFGS-B оптимізацію. Leisen et al. (2020) розробили об'єктивний байєсівський підхід для класу двочастинних розподілів із масштабованими хвостами і показали переваги для прогнозування щільності цін на електроенергію, коли TN-форма правильно специфікована. Водночас обидві роботи зазначають: при хибній специфікації форми параметричні підходи можуть поступатися напівпараметричним (White, 1982).
+
+#### 1.2.4 Метод поліноміальної максимізації (PMM)
+
+**Метод поліноміальної максимізації (МПП/PMM)** розроблений Кунченком і Легою (1992) і систематично викладений у монографії Кунченка (2002). Метод ґрунтується на максимізації поліноміальної функції спостережень відносно оцінюваного параметра та дозволяє врахувати старші кумулянти розподілу без знання його функціональної форми. PMM є концептуально подібним до MLE, але замінює щільність розподілу описом через моменти та кумулянти вищих порядків.
+
+Warsza і Zabolotnii (2017) застосували PMM(S = 3) до скалярного оцінювання параметра розташування при симетричних негауссових даних і отримали ключову формулу для коефіцієнта зменшення дисперсії:
+
+$$g_3 = 1 - \frac{\gamma_4^2}{6 + 9\gamma_4 + \gamma_6}$$
+
+Zabolotnii et al. (2018) розширили PMM на **лінійну регресію з асиметричними похибками** (PMM2, S = 2) і показали g₂ = 1 − γ₃²/(2 + γ₄). Zabolotnii et al. (2018, Karaganda) дослідили PMM(r = 3) для скалярного оцінювання при бімодальних сумішах експоненціальних розподілів: при глибокій антимодальності (C₂ ≥ 1) досягається 40–60% зменшення дисперсії порівняно з вибірковим середнім.
+
+Ключовий безпосередній попередник даної роботи — Zabolotnii et al. (2020), де **PMM3 (S = 3) вперше застосовано до лінійної регресії із симетричними негауссовими похибками** загального вигляду (рівномірний, трапецієвидний, трикутний, дугосинусоїдний, Лапласа). На основі симуляцій Монте-Карло (N ∈ {20, 50, 200}) підтверджена збіжність емпіричного g̃₃ до теоретичного g₃. Реальний приклад: дані CO₂ Mauna Loa (N = 336, γ̂₄ = −1.0, γ̂₆ = 5.2) — g₃ ≈ 0.50, довірчі інтервали вужчі на ~30%.
+
+Для часових рядів PMM застосований до авторегресійних AR(p) (Zabolotnii et al., 2022), ковзних середніх MA(q) (Zabolotnii et al., 2023) та ARIMA(p,d,q) (Zabolotnii, 2025) моделей із асиметричними інноваціями.
+
+#### 1.2.5 Ідентифікація негауссовості та діагностика
+
+Jarque і Bera (1987) запропонували тест нормальності на основі ексцесу та асиметрії вибірки, який широко використовується для діагностики залишків регресії. Boos (1987) розробив тести для виявлення асиметричних похибок у регресійних залишках. Ці інструменти є основою адаптивного алгоритму PMM (крок 1.2.4 вище): нормальні залишки → МНК, асиметричні → PMM2, симетричні платикуртичні → PMM3.
+
+### 1.3 Науковий внесок роботи
+
+Попри наявність робіт з PMM3 для загальних симетричних розподілів (Zabolotnii et al., 2020) та MLE-TN (Salinas et al., 2023), систематичного **прямого порівняння PMM3 і MLE-TN в рамках TN-моделі** досі не проводилось. Ця прогалина є суттєвою: TN відрізняється від вивчених у (2020) розподілів тим, що має аналітично точно відомі кумулянти і допускає параметричний суперник (MLE-TN), що досягає межі Крамера–Рао.
+
+Основні результати даної роботи:
+
+1. **Теоретичне порівняння**: аналітичні вирази для g₃(λ), ARE(MLE-TN)(λ) та крива ефективності PMM3 vs MLE-TN у функції від λ і γ₄.
+2. **Монте-Карло підтвердження**: емпіричні ARE і g₃ для λ ∈ {0.5, 1, 1.5, 2, 3, 5}, n ∈ {46, 100, 200, 500} (M = 500 реплікацій); підтвердження збіжності ĝ₃ → g₃ при n ≥ 100.
+3. **Аналіз робастності**: поведінка PMM3 та MLE-TN при хибній специфікації (рівномірний, трикутний, логістичний, t₁₀); PMM3 зберігає ARE ≈ 1, MLE-TN може втрачати ефективність.
+4. **Числова стійкість**: аналіз збіжності Newton–Raphson для PMM3 в унімодальному та бімодальному режимах TN (100% для всіх 24 блоків MC).
+5. **Емпіричний поріг**: γ₄ ≲ −0.7 як практичне правило для вибору PMM3 над МНК, обґрунтоване на 7 реальних наборах даних.
+6. **Реальні дані**: ірис Фішера (n = 50, γ₄ = −0.966): PMM3 досягає 43% зниження дисперсії за бутстрепом, LOO-MSE PMM3 < OLS < MLE-TN.
 
 ---
 
@@ -371,29 +405,81 @@ $$\text{Sepal.Length}_v = \beta_0 + \beta_1 \cdot \text{Sepal.Width}_v + \vareps
 
 ## Список літератури
 
+**PMM — теорія та застосування**
+
 1. Kunchenko, Yu. P.; Lega, Yu. G. Polynomial parameter estimation of close to Gaussian random variables. *Radioelectronics and Communications Systems* **1992**, *35*(8), 76–78.
 
-2. Zabolotnii, S.; Warsza, Z. L.; Tkachenko, O. Polynomial Estimation of Linear Regression Parameters for the Asymmetric PDF of Errors. *Automation 2018*, Springer, pp. 780–791. https://doi.org/10.1007/978-3-319-77179-3_75
+2. Kunchenko, Yu. P. *Polynomial Parameter Estimations of Close to Gaussian Random Variables*. Shaker Verlag: Aachen, 2002.
 
-3. Zabolotnii, S.; Warsza, Z. L.; Tkachenko, O. Application of the polynomial maximization method for estimating parameters of autoregressive models with asymmetric non-Gaussian innovations. *Metrology and Measurement Systems* **2022**, *29*(3), 441–458. https://doi.org/10.24425/mms.2022.141801
+3. Warsza, Z. L.; Zabolotnii, S. W. A Polynomial Estimation of Measurand Parameters for Samples of Non-Gaussian Symmetrically Distributed Data. *Automation 2017*, Springer, vol. 550, pp. 468–480. https://doi.org/10.1007/978-3-319-54042-9_45
 
-4. Zabolotnii, S.; Warsza, Z. L.; Tkachenko, O. PMM-Based Estimation of Moving Average Models with Asymmetric Non-Gaussian Innovations. *Applied Sciences* **2023**, *13*, 6089. https://doi.org/10.3390/app13106089
+4. Zabolotnii, S.; Warsza, Z. L.; Tkachenko, O. Polynomial Estimation of Linear Regression Parameters for the Asymmetric PDF of Errors. *Automation 2018*, Springer, vol. 743, pp. 780–791. https://doi.org/10.1007/978-3-319-77179-3_75
 
-5. Zabolotnii, S. Applying the Polynomial Maximization Method to Estimate ARIMA Models with Asymmetric Non-Gaussian Innovations. *Submitted* **2025**. https://doi.org/10.5281/zenodo.17529589
+5. Zabolotnii, S. V.; Kucheruk, V. Yu.; Warsza, Z. L.; Khassenov, A. K. Polynomial Estimates of Measurand Parameters for Data from Bimodal Mixtures of Exponential Distributions. *Bulletin of Karaganda University, Series Physics* **2018**, *90*(2), 71–80.
 
-6. Salinas, V. H.; Arellano-Valle, R. B.; Gómez, H. W. Linear Regression Models Based on the Two-Piece Normal Distribution: A Bayesian and Frequentist Approach. *Mathematics* **2023**, *11*(5), 1271. https://doi.org/10.3390/math11051271
+6. Zabolotnii, S. W.; Warsza, Z. L.; Tkachenko, O. Estimation of Linear Regression Parameters of Symmetric Non-Gaussian Errors by Polynomial Maximization Method. *Automation 2019*, Springer, vol. 920. https://doi.org/10.1007/978-3-030-13273-6_59
 
-7. Azzalini, A. A class of distributions which includes the normal ones. *Scandinavian Journal of Statistics* **1985**, *12*(2), 171–178.
+7. Zabolotnii, S.; Warsza, Z. L.; Tkachenko, O. Application of the polynomial maximization method for estimating parameters of autoregressive models with asymmetric non-Gaussian innovations. *Metrology and Measurement Systems* **2022**, *29*(3), 441–458. https://doi.org/10.24425/mms.2022.141801
 
-8. John, S. The three-parameter two-piece normal family of distributions and its fitting. *Communications in Statistics: Theory and Methods* **1982**, *11*(8), 879–885.
+8. Zabolotnii, S.; Warsza, Z. L.; Tkachenko, O. PMM-Based Estimation of Moving Average Models with Asymmetric Non-Gaussian Innovations. *Applied Sciences* **2023**, *13*, 6089. https://doi.org/10.3390/app13106089
 
-9. Fisher, R. A. The use of multiple measurements in taxonomic problems. *Annals of Eugenics* **1936**, *7*(2), 179–188.
+9. Zabolotnii, S. Applying the Polynomial Maximization Method to Estimate ARIMA Models with Asymmetric Non-Gaussian Innovations. *Submitted* **2025**. https://doi.org/10.5281/zenodo.17529589
 
-10. Lehmann, E. L. *Theory of Point Estimation*. Wiley, New York, 1983.
+**Двочастинний нормальний та споріднені розподіли**
 
-11. Efron, B.; Tibshirani, R. J. *An Introduction to the Bootstrap*. Chapman & Hall, New York, 1993.
+10. John, S. The three-parameter two-piece normal family of distributions and its fitting. *Communications in Statistics: Theory and Methods* **1982**, *11*(8), 879–885.
 
-12. White, H. Maximum likelihood estimation of misspecified models. *Econometrica* **1982**, *50*(1), 1–25.
+11. Azzalini, A. A class of distributions which includes the normal ones. *Scandinavian Journal of Statistics* **1985**, *12*(2), 171–178.
+
+12. Salinas, V. H.; Arellano-Valle, R. B.; Gómez, H. W. Linear Regression Models Based on the Two-Piece Normal Distribution: A Bayesian and Frequentist Approach. *Mathematics* **2023**, *11*(5), 1271. https://doi.org/10.3390/math11051271
+
+13. Leisen, F.; Rossini, L.; Villa, C. Loss-based approach to two-piece location-scale distributions with applications to dependent data. *Statistical Methods and Applications* **2020**, *29*, 309–333. https://doi.org/10.1007/s10260-019-00481-x
+
+**Ефективність МНК та альтернативні оцінювачі**
+
+14. Gauss, C. F. *Theoria Motus Corporum Coelestium*. Perthes and Besser: Hamburg, 1809.
+
+15. Cox, D. R.; Hinkley, D. V. A note on the efficiency of least-squares estimates. *Journal of the Royal Statistical Society, Series B* **1968**, *30*(2), 284–289.
+
+16. Tiku, M. L.; Islam, M. Q.; Selçuk, A. S. Non-normal regression. II. Symmetric distributions. *Communications in Statistics: Theory and Methods* **2001**, *30*(6), 1021–1045. https://doi.org/10.1081/STA-100104348
+
+17. Andargie, A. A.; Rao, K. S. Estimation of a linear model with two-parameter symmetric platykurtic distributed errors. *Journal of Uncertainty Analysis and Applications* **2013**, *1*(1), 1–19. https://doi.org/10.1186/2195-5468-1-14
+
+18. Ganguly, S. S. Robust regression analysis for non-normal situations under symmetric distributions arising in medical research. *Journal of Modern Applied Statistical Methods* **2014**, *13*(1), 446–462.
+
+**Робастна та альтернативна регресія**
+
+19. Huber, P. J. The behavior of maximum likelihood estimates under nonstandard conditions. *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability* **1967**, *1*, 221–233.
+
+20. Narula, S. C.; Wellington, J. F. The minimum sum of absolute errors regression: a state of the art survey. *International Statistical Review* **1982**, *50*(3), 317–326.
+
+21. Stone, C. J. Adaptive maximum likelihood estimators of a location parameter. *Annals of Statistics* **1975**, *3*(2), 267–284. https://doi.org/10.1214/aos/1176343056
+
+22. Koenker, R.; Hallock, K. F. Quantile regression. *Journal of Economic Perspectives* **2001**, *15*(4), 143–156. https://doi.org/10.1257/jep.15.4.143
+
+23. Ma, Y.; Wang, S.; Xu, L.; Yao, W. Semiparametric mixture regression with unspecified error distributions. *TEST* **2021**, *30*, 429–444. https://doi.org/10.1007/s11749-020-00725-z
+
+24. White, H. Maximum likelihood estimation of misspecified models. *Econometrica* **1982**, *50*(1), 1–25. https://doi.org/10.2307/1912526
+
+**Діагностика та тестування**
+
+25. Jarque, C. M.; Bera, A. K. A test for normality of observations and regression residuals. *International Statistical Review* **1987**, *55*(2), 163–172. https://doi.org/10.2307/1403192
+
+**Теорія оцінювання та обчислювальні методи**
+
+26. Lehmann, E. L. *Theory of Point Estimation*. Wiley: New York, 1983.
+
+27. Efron, B.; Tibshirani, R. J. *An Introduction to the Bootstrap*. Chapman & Hall: New York, 1993.
+
+**Реальні дані**
+
+28. Fisher, R. A. The use of multiple measurements in taxonomic problems. *Annals of Eugenics* **1936**, *7*(2), 179–188. https://doi.org/10.1111/j.1469-1809.1936.tb02137.x
+
+**Програмне забезпечення**
+
+29. R Core Team. *R: A Language and Environment for Statistical Computing*. R Foundation for Statistical Computing: Vienna, 2024.
+
+30. Zabolotnii, S. *EstemPMM: Estimation using Polynomial Maximization Method*. R package, 2024. https://github.com/SZabolotnii/EstemPMM
 
 ---
 
@@ -443,4 +529,5 @@ Monte Carlo simulation
 - [x] Підрозділ 2.5 про асимптотичну нормальність PMM3 — додано
 - [x] Секція 5.4: whiteside Gas~Temp+Insul — виправлені числа (γ₄=−0.431)
 - [x] Abstract англійською — додано (Mathematics MDPI style)
+- [x] Посилений вступ та огляд літератури — виконано 2026-03-13 (30 посилань, 5 тематичних груп)
 - [ ] Стилістичне редагування тексту перед відправкою до журналу
