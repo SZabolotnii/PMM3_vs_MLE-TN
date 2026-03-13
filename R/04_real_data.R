@@ -160,6 +160,28 @@ bootstrap_comparison <- function(data, formula = y ~ x,
 # Fair criterion for comparing MLE-TN (parametric) and PMM3 (moment-based)
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Dataset C: Mauna Loa CO2 (built-in R dataset)
+# ---------------------------------------------------------------------------
+
+#' Load Mauna Loa CO2 as regression dataset: CO2 concentration ~ decimal year
+#'
+#' Built-in R dataset `co2`: 468 monthly observations, 1959–1997.
+#' Response y = atmospheric CO2 (ppm); predictor x = decimal year.
+#' OLS of y ~ x captures the linear trend; residuals retain the seasonal
+#' oscillation (≈ sinusoid, ±3 ppm), which produces a U-shaped (bimodal-edge)
+#' distribution → gamma4 << 0, gamma3 ≈ 0.  Ideal PMM3 scenario.
+#'
+#' @return data.frame with columns y, x, dataset
+load_co2 <- function() {
+  data.frame(
+    y       = as.numeric(co2),
+    x       = as.numeric(time(co2)),
+    dataset = "Mauna Loa CO2 (Keeling & Whorf, SIO)",
+    stringsAsFactors = FALSE
+  )
+}
+
 #' LOO cross-validation MSE for all four methods
 #'
 #' @param data     data.frame with y, x

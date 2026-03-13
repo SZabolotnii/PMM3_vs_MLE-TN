@@ -1,0 +1,3 @@
+"model","method","gamma4","g3_theor"
+"seasonal_regression","OLS",-0.580106229694817,0.89883618526326
+"seasonal_regression","PMM3",-0.580106229695991,0.898836185262684
