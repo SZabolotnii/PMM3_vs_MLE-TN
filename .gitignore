@@ -1,0 +1,21 @@
+# R
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# Large MC cache files (rerun with run_full_mc_study(force_rerun=TRUE))
+results/mc_cache/*.rds
+
+# Generated figures (reproducible from R)
+results/figures/*.png
+results/figures/*.pdf
+
+# Generated HTML report (reproducible)
+results/*.html
+
+# Keep CSV results tables in git
+!results/tables/*.csv
+
+# macOS
+.DS_Store

@@ -1,0 +1,6 @@
+"dataset","n","gamma3","gamma4","g3_theor","improve_pct","loo_rel_pmm3","loo_rel_mle","boot_g3_pmm3","boot_g3_mle"
+"whiteside: Gas~Temp+Insul",56,-0.171,-0.431,0.92,8,0.9988,1.0044,0.978,0.961
+"trees: Volume~Girth",31,0.028,-0.541,0.907,9.3,1.0009,1.0109,1.283,0.861
+"cars: speed~dist",50,-0.207,-0.474,0.928,7.2,1.0034,1.0042,1.138,1.103
+"faithful: erupt~wait",272,-0.138,-0.452,0.934,6.6,1,1.0006,1.03,1.026
+"iris-setosa: SL~SW",50,-0.041,-0.465,0.905,9.5,1.0088,1.0195,1.222,1.457

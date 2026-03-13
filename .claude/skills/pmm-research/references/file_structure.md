@@ -1,0 +1,96 @@
+# Repository File Structure
+
+Total items: 90
+
+```
+📄 .DS_Store
+📁 .github
+📄 .gitignore
+📄 ARXIV_SUBMISSION_GUIDE.md
+📄 CITATION.cff
+📄 DESCRIPTION
+📁 EstemPMM2-lib
+📄 LICENSE
+📄 Makefile
+📄 NAMESPACE
+📁 R
+📄 README.md
+📁 arxiv_submission
+📁 data
+📁 man
+📁 results
+📁 scripts
+  📁 workflows
+  📄 EstemPMM_0.1.1.tar.gz
+  📄 data.R
+  📄 00README.txt
+  📄 PMM2_ARIMA.pdf
+  📄 PMM2_ARIMA.tex
+  📁 figures
+  📄 references.bib
+  📄 DCOILWTICO.csv
+  📄 DCOILWTICO.rda
+  📄 DCOILWTICO.Rd
+  📄 .gitignore
+  📄 all_results.rds
+  📄 descriptive_stats.csv
+  📄 fitted_models.rds
+  📄 full_results.csv
+  📄 method_comparison.csv
+  📁 monte_carlo
+  📄 parameter_mse_ratio.csv
+  📁 plots
+  📄 study_summary.rds
+  📄 wti_diagnostics_statistics.csv
+  📄 wti_fixed_split_validation.csv
+  📄 wti_rolling_window_validation.csv
+  📄 add_confidence_intervals.R
+  📄 arima_oil_quick_demo.R
+  📄 comprehensive_study.R
+  📄 create_visualizations.R
+  📄 generate_report.R
+  📄 run_full_study.R
+  📄 run_monte_carlo.R
+  📄 wti_diagnostics.R
+  📄 wti_out_of_sample.R
+    📄 manual-release.yml
+    📄 r.yml
+    📄 01_aic_comparison.pdf
+    📄 02_bic_comparison.pdf
+    📄 03_rmse_comparison.pdf
+    📄 04_computation_time.pdf
+    📄 05_kurtosis_comparison.pdf
+    📄 06_skewness_comparison.pdf
+    📄 07_performance_heatmap.pdf
+    📄 08_method_differences.pdf
+    📄 09_best_model_diagnostics.pdf
+    📄 10_summary_statistics.pdf
+    📄 11_cssml_diagnostics.pdf
+    📄 12_pmm2_diagnostics.pdf
+    📄 13_comparative_diagnostics.pdf
+    📄 arima011_summary.csv
+    📄 arima110_re_vs_sample_size.csv
+    📄 arima110_residual_cumulants.csv
+    📄 arima110_summary.csv
+    📄 arima110_summary_with_ci.csv
+    📄 arima111_summary.csv
+    📄 arima210_summary.csv
+    📄 article_comparison.csv
+    📄 monte_carlo_metrics.csv
+    📄 monte_carlo_metrics_with_ci.csv
+    📄 raw_estimates.rds
+    📄 01_aic_comparison.png
+    📄 02_bic_comparison.png
+    📄 03_rmse_comparison.png
+    📄 04_computation_time.png
+    📄 05_kurtosis_comparison.png
+    📄 06_skewness_comparison.png
+    📄 07_performance_heatmap.png
+    📄 08_method_differences.png
+    📄 09_best_model_diagnostics.png
+    📄 10_summary_statistics.png
+    📄 wti_acf_pacf.png
+    📄 wti_qq_plots.png
+    📄 wti_residual_histograms.png
+    📄 wti_residual_time_series.png
+```

@@ -1,0 +1,270 @@
+---
+title: "PMM3 vs MLE-TN: Experimental Comparative Analysis"
+subtitle: "Reference: Salinas et al. (2023), *Mathematics* 11(5), 1271"
+author: "Sergiy Zabolotnyi"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    code_folding: hide
+    theme: cosmo
+    highlight: tango
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width  = 10,
+  fig.height = 6,
+  dpi        = 150,
+  cache      = FALSE
+)
+
+# Load all project modules
+setwd(here::here())   # or set manually: setwd("/Users/serhiizabolotnii/Science/PMM3_vs_MLE-TN")
+source("R/config.R")
+load_project(verbose = FALSE)
+
+# EstemPMM (required for PMM2; PMM3 via skeleton if not yet implemented)
+if (!requireNamespace("EstemPMM", quietly = TRUE)) {
+  warning("EstemPMM not installed. PMM2 and PMM3 results will be NA.")
+}
+
+set.seed(CFG$seed)
+```
+
+---
+
+# Research Overview
+
+**Question:** Is PMM3 (Polynomial Maximization Method, S=3) competitive with
+MLE-TN (Salinas et al., 2023) when the true DGP is the Two-piece Normal distribution?
+
+**Key insight:** PMM3 uses only moments (μ₂, μ₄, μ₆) — no distributional assumption.
+MLE-TN maximises the exact TN log-likelihood. The comparison spans:
+
+| Dimension | Values |
+|-----------|--------|
+| Shape λ | 0.5, 1.0, 1.5, 2.0, 3.0, 5.0 |
+| Sample size n | 46, 100, 200, 500 |
+| Methods | OLS, PMM2 (control), PMM3, MLE-TN |
+| Real data | Biaxial fatigue (Rieck & Nedelman, 1991), nlme::Fatigue |
+
+**PMM3 theoretical efficiency:**
+$$g_3(\lambda) = \frac{\text{Var}(\hat{\beta}_{PMM3})}{\text{Var}(\hat{\beta}_{OLS})} = 1 - \frac{\gamma_4^2(\lambda)}{6 + 9\gamma_4(\lambda) + \gamma_6(\lambda)}$$
+
+---
+
+# Block 1: Theoretical Calibration {.tabset}
+
+## Table T1
+
+```{r table-T1}
+T1 <- build_table_T1()
+
+knitr::kable(
+  T1[, c("lambda", "gamma4", "gamma6", "g3", "improvement_pct", "mode")],
+  digits    = 3,
+  col.names = c("λ", "γ₄(λ)", "γ₆(λ)", "g₃(λ)", "Efficiency gain (%)", "Mode"),
+  caption   = "**Table T1.** Theoretical TN cumulants and PMM3 variance reduction vs OLS."
+)
+```
+
+**Notes:**
+- TN is always platykurtic: γ₄(λ) < 0 for all λ > 0
+- At λ = 1: boundary between unimodal and bimodal TN
+- g₃ → 0.5 as λ → ∞ (maximum 50% variance reduction)
+
+## Efficiency Curve
+
+```{r fig-efficiency, fig.cap="Fig 1. PMM3 theoretical efficiency for TN distribution."}
+plot_efficiency_curve(T1)
+```
+
+---
+
+# Block 2: Monte Carlo Study
+
+> **Configuration:** M = `r CFG$mc_replications` replications.
+> For the final paper run, set `CFG$mc_replications <- 5000` in `R/config.R`.
+> MC results are cached — delete `results/mc_cache/mc_full_results.rds` to rerun.
+
+```{r run-mc, cache=FALSE}
+mc_results <- run_full_mc_study()
+```
+
+## ARE by Method {.tabset}
+
+### Plot
+
+```{r fig-are, fig.cap="Fig 2. Asymptotic Relative Efficiency relative to OLS."}
+plot_are_comparison(mc_results)
+```
+
+### Table
+
+```{r table-are}
+# Pivot for readability: lambda x method x n → ARE
+are_wide <- reshape(
+  mc_results[, c("lambda", "n", "method", "are")],
+  idvar     = c("lambda", "n"),
+  timevar   = "method",
+  direction = "wide"
+)
+names(are_wide) <- gsub("^are\\.", "", names(are_wide))
+are_wide <- are_wide[order(are_wide$lambda, are_wide$n), ]
+
+knitr::kable(are_wide, digits = 3, row.names = FALSE,
+             caption = "**Table T2a.** ARE = MSE(OLS)/MSE(method). >1 means method beats OLS.")
+```
+
+## PMM3: Empirical vs Theoretical g₃
+
+```{r fig-g3, fig.cap="Fig 3. Convergence of empirical g̃₃ to theoretical g₃."}
+plot_g3_convergence(mc_results, T1)
+```
+
+```{r table-T2}
+pmm3_mc <- mc_results[mc_results$method == "PMM3" & !is.na(mc_results$g3_empirical), ]
+T2 <- merge(pmm3_mc[, c("lambda","n","g3_empirical","conv_rate")],
+            T1[, c("lambda","g3")], by = "lambda", all.x = TRUE)
+T2$delta <- round(T2$g3_empirical - T2$g3, 4)
+T2 <- T2[order(T2$lambda, T2$n), ]
+
+knitr::kable(T2, digits = 3, row.names = FALSE,
+             col.names = c("λ","n","g̃₃ (MC)","Conv. rate","g₃ (theor.)","Δ"),
+             caption = "**Table T2b.** PMM3 empirical vs theoretical efficiency.")
+```
+
+---
+
+# Block 3: Real Data — Biaxial Fatigue (n = 46)
+
+```{r biaxial-load}
+dat_bf  <- load_biaxial_fatigue()
+diag_bf <- resid_diagnostics(dat_bf)
+```
+
+## Residual Diagnostics
+
+| Statistic | Value | Interpretation |
+|-----------|-------|----------------|
+| n | `r diag_bf$n` | — |
+| γ̂₃ (skewness) | `r round(diag_bf$gamma3, 3)` | `r ifelse(diag_bf$is_symmetric, "✓ Symmetric", "⚠️ Asymmetric (|γ₃| > 0.3)")` |
+| γ̂₄ (kurtosis) | `r round(diag_bf$gamma4, 3)` | `r ifelse(diag_bf$is_gaussian, "Near-Gaussian", "Non-Gaussian")` |
+| g₃ (theoretical) | `r round(diag_bf$g3_theoretical, 4)` | — |
+| PMM3 gain | `r round(diag_bf$improvement_pct, 2)`% | Expected improvement over OLS |
+| **Recommended** | — | **`r diag_bf$recommended_method`** |
+
+> ⚠️ **Research note:** γ̂₃ ≈ `r round(diag_bf$gamma3, 2)` indicates residual asymmetry.
+> Biaxial fatigue errors are *not symmetric* — this contradicts the TN symmetry assumption.
+> Why does MLE-TN still outperform other methods in Salinas et al. (2023)?
+> This is an open question explored in this analysis.
+
+## Method Comparison (Table T3)
+
+```{r fit-all-methods}
+fit_ols  <- lm(y ~ x, dat_bf)
+
+fit_mle  <- tryCatch(mle_tn(y ~ x, dat_bf),  error = function(e) NULL)
+fit_pmm2 <- tryCatch(EstemPMM::lm_pmm2(y ~ x, dat_bf), error = function(e) NULL)
+fit_pmm3 <- tryCatch(lm_pmm3(y ~ x, dat_bf), error = function(e) NULL)
+
+T3 <- data.frame(
+  Method = c("OLS", "MLE-TN", "PMM2", "PMM3"),
+  Beta0  = c(
+    coef(fit_ols)[1],
+    if (!is.null(fit_mle))  fit_mle$coefficients[1]   else NA,
+    if (!is.null(fit_pmm2)) fit_pmm2@coefficients[1]  else NA,
+    if (!is.null(fit_pmm3)) fit_pmm3@coefficients[1]  else NA
+  ),
+  Beta1  = c(
+    coef(fit_ols)[2],
+    if (!is.null(fit_mle))  fit_mle$coefficients[2]   else NA,
+    if (!is.null(fit_pmm2)) fit_pmm2@coefficients[2]  else NA,
+    if (!is.null(fit_pmm3)) fit_pmm3@coefficients[2]  else NA
+  ),
+  Lambda = c(NA,
+             if (!is.null(fit_mle)) round(fit_mle$lambda, 3) else NA,
+             NA, NA),
+  AIC    = c(AIC(fit_ols),
+             if (!is.null(fit_mle)) round(fit_mle$aic, 2) else NA,
+             NA, NA),
+  BIC    = c(BIC(fit_ols),
+             if (!is.null(fit_mle)) round(fit_mle$bic, 2) else NA,
+             NA, NA),
+  stringsAsFactors = FALSE
+)
+
+knitr::kable(T3, digits = 4,
+             caption = "**Table T3.** Method comparison on Biaxial Fatigue (n=46). Replicates Table 5 of Salinas et al. (2023) + PMM2/PMM3.")
+```
+
+---
+
+# Block 5: Misspecification Robustness
+
+```{r misspec, cache=FALSE}
+misspec_results <- do.call(rbind,
+  lapply(CFG$misspec_distributions, run_misspec_block, M = 500))
+
+knitr::kable(
+  misspec_results,
+  digits    = 3,
+  col.names = c("DGP", "n", "ARE(MLE-TN)", "ARE(PMM3)",
+                "Bias(MLE-TN)", "Bias(PMM3)",
+                "NA%(MLE-TN)", "NA%(PMM3)"),
+  caption   = "**Table T6.** ARE under distributional misspecification (true DGP ≠ TN). ARE > 1 = better than OLS."
+)
+```
+
+---
+
+# Block 6: Bimodal TN Test
+
+```{r bimodal, cache=FALSE}
+bimodal_df <- run_bimodal_test(M = 200)
+
+knitr::kable(
+  bimodal_df,
+  digits    = 3,
+  col.names = c("λ", "Bimodal?", "Bias(PMM3)", "Conv. rate", "Mean iter.", "NA%"),
+  caption   = "**Table T7.** PMM3 convergence near the unimodal/bimodal boundary (λ=1)."
+)
+```
+
+```{r fig-bimodal, fig.cap="Fig 4. PMM3 convergence rate by lambda."}
+plot_bimodal_convergence(bimodal_df)
+```
+
+---
+
+# Conclusions
+
+*(Fill in after MC study is complete with M=5000)*
+
+**Preliminary observations:**
+
+1. **Theoretical efficiency (Table T1):** TN is always platykurtic → PMM3 always gains
+   over OLS. Maximum gain ~50% at large λ.
+
+2. **Biaxial fatigue (Table T3):** OLS residuals have γ̂₃ ≈ `r round(diag_bf$gamma3, 2)`,
+   suggesting PMM2 may outperform PMM3 here.
+
+3. **Misspecification (Table T6):** PMM3 is expected to be more robust than MLE-TN
+   when the true distribution is not TN.
+
+4. **Bimodal test (Table T7):** PMM3 convergence may degrade for λ > 1.5.
+
+---
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /Users/serhiizabolotnii/Science/PMM3_vs_MLE-TN/.claude/skills)",
+      "Bash(unzip -o /Users/serhiizabolotnii/Science/PMM3_vs_MLE-TN/pmm-research.skill -d /Users/serhiizabolotnii/Science/PMM3_vs_MLE-TN/.claude/skills/)"
+    ]
+  }
+}
