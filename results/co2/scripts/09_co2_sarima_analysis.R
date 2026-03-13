@@ -286,6 +286,233 @@ if (!is.null(pmm3_seas)) {
 }
 
 # ===========================================================================
+# PMM2 empirical comparison for seasonal regression
+# Question: how much does PMM2 actually help when gamma3 = +0.408?
+# ===========================================================================
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+cat("PMM2 empirical comparison: y ~ x + sin1 + cos1\n")
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+
+# Bootstrap (B=2000): variance of x-slope estimator across methods
+# bootstrap_comparison(...)[2] extracts coefficient of x (trend slope)
+cat("Bootstrap (B=2000, seed=", CFG$seed, ")...\n")
+boot_seas <- bootstrap_comparison(dat_seas, formula = formula_seas, B = 2000)
+
+cat("\nBootstrap results (g3_empirical = Var/Var_OLS for x-slope):\n")
+var_ols_boot <- boot_seas$sd[boot_seas$method == "OLS"]^2
+boot_seas$delta_pct <- (boot_seas$g3_empirical - 1) * 100
+print(boot_seas[, c("method", "sd", "g3_empirical", "delta_pct", "na_pct")],
+      digits = 5, row.names = FALSE)
+cat("\n")
+
+# LOO-MSE: manual loop to avoid PMM2 dispatch bug
+cat("LOO-MSE (n=", nrow(dat_seas), ")...\n")
+n_seas <- nrow(dat_seas)
+
+loo_ols_seas <- mean(sapply(seq_len(n_seas), function(i) {
+  fit <- lm(formula_seas, data = dat_seas[-i, ])
+  (dat_seas$y[i] - as.numeric(predict(fit, newdata = dat_seas[i, ])))^2
+}))
+
+loo_pmm2_seas <- mean(sapply(seq_len(n_seas), function(i) {
+  tryCatch({
+    fit <- EstemPMM::lm_pmm2(formula_seas, dat_seas[-i, ])
+    pred <- as.numeric(predict(fit, newdata = dat_seas[i, ]))
+    (dat_seas$y[i] - pred)^2
+  }, error = function(e) NA_real_)
+}), na.rm = TRUE)
+
+loo_pmm3_seas <- mean(sapply(seq_len(n_seas), function(i) {
+  tryCatch({
+    fit <- lm_pmm3(formula_seas, dat_seas[-i, ])
+    pred <- as.numeric(predict(fit, newdata = dat_seas[i, ]))
+    (dat_seas$y[i] - pred)^2
+  }, error = function(e) NA_real_)
+}), na.rm = TRUE)
+
+loo_mltn_seas <- mean(sapply(seq_len(n_seas), function(i) {
+  tryCatch({
+    fit <- mle_tn(formula_seas, dat_seas[-i, ])
+    pred <- as.numeric(predict(fit, newdata = dat_seas[i, ]))
+    (dat_seas$y[i] - pred)^2
+  }, error = function(e) NA_real_)
+}), na.rm = TRUE)
+
+loo_seas_df <- data.frame(
+  method  = c("OLS", "PMM2", "PMM3", "MLE_TN"),
+  loo_mse = c(loo_ols_seas, loo_pmm2_seas, loo_pmm3_seas, loo_mltn_seas),
+  stringsAsFactors = FALSE
+)
+loo_seas_df$rel_ols  <- loo_seas_df$loo_mse / loo_ols_seas
+loo_seas_df$delta_pct <- (loo_seas_df$rel_ols - 1) * 100
+
+cat("\nLOO-MSE results:\n")
+print(loo_seas_df, digits = 6, row.names = FALSE)
+cat("\n")
+
+# Save combined PMM2 seasonal comparison
+pmm2_seas_out <- data.frame(
+  model    = "seasonal_regression",
+  method   = boot_seas$method,
+  gamma3   = cum_ols_seas$gamma3,          # same for all (OLS residuals)
+  gamma4   = cum_ols_seas$gamma4,
+  g3_theor = cum_ols_seas$g3_theoretical,
+  g3_emp   = boot_seas$g3_empirical,
+  delta_boot_pct = boot_seas$delta_pct,
+  loo_mse  = loo_seas_df$loo_mse[match(boot_seas$method, loo_seas_df$method)],
+  rel_ols  = loo_seas_df$rel_ols[match(boot_seas$method, loo_seas_df$method)],
+  stringsAsFactors = FALSE
+)
+
+write.csv(pmm2_seas_out,
+          file.path(OUT, "pmm2_seasonal_comparison.csv"),
+          row.names = FALSE)
+cat("Saved:", file.path(OUT, "pmm2_seasonal_comparison.csv"), "\n\n")
+
+# Human-readable summary
+cat("--- PMM2 seasonal regression: summary ---\n")
+best_boot_seas <- boot_seas$method[which.min(boot_seas$g3_empirical)]
+best_loo_seas  <- loo_seas_df$method[which.min(loo_seas_df$loo_mse)]
+cat(sprintf("Bootstrap winner (g3_emp): %s\n", best_boot_seas))
+cat(sprintf("LOO-MSE  winner          : %s\n", best_loo_seas))
+cat(sprintf("PMM2 bootstrap g3_emp    : %.4f  (delta = %+.1f%%)\n",
+            boot_seas$g3_empirical[boot_seas$method == "PMM2"],
+            boot_seas$delta_pct[boot_seas$method == "PMM2"]))
+cat(sprintf("PMM2 LOO-MSE rel_OLS     : %.5f  (delta = %+.2f%%)\n",
+            loo_seas_df$rel_ols[loo_seas_df$method == "PMM2"],
+            loo_seas_df$delta_pct[loo_seas_df$method == "PMM2"]))
+cat("\n")
+
+# ===========================================================================
+# Postulation E: Two-harmonic seasonal regression
+#   y ~ x + sin(2πt) + cos(2πt) + sin(4πt) + cos(4πt)
+# Hypothesis: second harmonic absorbs asymmetric overtone → γ₃ ≈ 0,
+#             remaining residuals may be platykurtic → PMM3 chance
+# ===========================================================================
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+cat("Postulation E: Two-harmonic seasonal regression\n")
+cat("  y ~ x + sin(2πt) + cos(2πt) + sin(4πt) + cos(4πt)\n")
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+
+dat_seas2 <- data.frame(
+  y    = y_full,
+  x    = t_full,
+  sin1 = sin(2 * pi * (t_full %% 1)),
+  cos1 = cos(2 * pi * (t_full %% 1)),
+  sin2 = sin(4 * pi * (t_full %% 1)),
+  cos2 = cos(4 * pi * (t_full %% 1))
+)
+formula_seas2 <- y ~ x + sin1 + cos1 + sin2 + cos2
+
+cat("OLS two-harmonic regression:\n")
+ols_seas2 <- lm(formula_seas2, data = dat_seas2)
+cat(round(coef(ols_seas2), 5), "\n")
+cum_ols_seas2 <- .sarima_pmm3_cumulants(residuals(ols_seas2))
+cat("OLS residual cumulants:\n"); print_cum(cum_ols_seas2)
+cat(sprintf("  R² = %.5f\n\n", summary(ols_seas2)$r.squared))
+
+# Assess symmetry before running bootstrap
+sym_ok2 <- abs(cum_ols_seas2$gamma3) < 0.3
+platy_ok2 <- !is.na(cum_ols_seas2$gamma4) && cum_ols_seas2$gamma4 < -0.5
+
+cat(sprintf("  Symmetry (|γ₃|<0.3): %s  |  Platykurtic (γ₄<-0.5): %s\n\n",
+            if (sym_ok2) "YES ✓" else sprintf("NO ✗  (γ₃=%+.3f)", cum_ols_seas2$gamma3),
+            if (platy_ok2) sprintf("YES ✓  (γ₄=%.3f)", cum_ols_seas2$gamma4) else
+                           sprintf("NO ✗  (γ₄=%.3f)", cum_ols_seas2$gamma4)))
+
+# PMM3 fit
+cat("PMM3 two-harmonic regression:\n")
+pmm3_seas2 <- tryCatch(lm_pmm3(formula_seas2, dat_seas2),
+                       error = function(e) { message("PMM3 failed: ", e); NULL })
+if (!is.null(pmm3_seas2)) {
+  shift2 <- pmm3_seas2@coefficients - coef(ols_seas2)
+  cat("PMM3 vs OLS coefficient shifts:\n")
+  print(round(shift2, 6))
+  cat(sprintf("  Convergence: %s  iter: %d\n\n",
+              pmm3_seas2@convergence, pmm3_seas2@iterations))
+}
+
+# Bootstrap + LOO
+cat("Bootstrap (B=2000, seed=", CFG$seed, ")...\n")
+boot_seas2 <- bootstrap_comparison(dat_seas2, formula = formula_seas2, B = 2000)
+boot_seas2$delta_pct <- (boot_seas2$g3_empirical - 1) * 100
+cat("\nBootstrap results (g3_empirical = Var/Var_OLS for x-slope):\n")
+print(boot_seas2[, c("method", "sd", "g3_empirical", "delta_pct", "na_pct")],
+      digits = 5, row.names = FALSE)
+cat("\n")
+
+cat("LOO-MSE (n=", nrow(dat_seas2), ")...\n")
+n_s2 <- nrow(dat_seas2)
+
+loo_ols_s2 <- mean(sapply(seq_len(n_s2), function(i) {
+  fit <- lm(formula_seas2, data = dat_seas2[-i, ])
+  (dat_seas2$y[i] - as.numeric(predict(fit, newdata = dat_seas2[i, ])))^2
+}))
+loo_pmm2_s2 <- mean(sapply(seq_len(n_s2), function(i) {
+  tryCatch({
+    fit <- EstemPMM::lm_pmm2(formula_seas2, dat_seas2[-i, ])
+    (dat_seas2$y[i] - as.numeric(predict(fit, newdata = dat_seas2[i, ])))^2
+  }, error = function(e) NA_real_)
+}), na.rm = TRUE)
+loo_pmm3_s2 <- mean(sapply(seq_len(n_s2), function(i) {
+  tryCatch({
+    fit <- lm_pmm3(formula_seas2, dat_seas2[-i, ])
+    (dat_seas2$y[i] - as.numeric(predict(fit, newdata = dat_seas2[i, ])))^2
+  }, error = function(e) NA_real_)
+}), na.rm = TRUE)
+loo_mltn_s2 <- mean(sapply(seq_len(n_s2), function(i) {
+  tryCatch({
+    fit <- mle_tn(formula_seas2, dat_seas2[-i, ])
+    (dat_seas2$y[i] - as.numeric(predict(fit, newdata = dat_seas2[i, ])))^2
+  }, error = function(e) NA_real_)
+}), na.rm = TRUE)
+
+loo_s2_df <- data.frame(
+  method    = c("OLS", "PMM2", "PMM3", "MLE_TN"),
+  loo_mse   = c(loo_ols_s2, loo_pmm2_s2, loo_pmm3_s2, loo_mltn_s2),
+  stringsAsFactors = FALSE
+)
+loo_s2_df$rel_ols   <- loo_s2_df$loo_mse / loo_ols_s2
+loo_s2_df$delta_pct <- (loo_s2_df$rel_ols - 1) * 100
+
+cat("\nLOO-MSE results:\n")
+print(loo_s2_df, digits = 6, row.names = FALSE)
+cat("\n")
+
+# Save
+seas2_out <- data.frame(
+  model    = "seasonal_regression_2harm",
+  method   = boot_seas2$method,
+  gamma3   = cum_ols_seas2$gamma3,
+  gamma4   = cum_ols_seas2$gamma4,
+  g3_theor = cum_ols_seas2$g3_theoretical,
+  g3_emp   = boot_seas2$g3_empirical,
+  delta_boot_pct = boot_seas2$delta_pct,
+  loo_mse  = loo_s2_df$loo_mse[match(boot_seas2$method, loo_s2_df$method)],
+  rel_ols  = loo_s2_df$rel_ols[match(boot_seas2$method, loo_s2_df$method)],
+  stringsAsFactors = FALSE
+)
+write.csv(seas2_out,
+          file.path(OUT, "seasonal_2harm_comparison.csv"),
+          row.names = FALSE)
+cat("Saved:", file.path(OUT, "seasonal_2harm_comparison.csv"), "\n\n")
+
+cat("--- Two-harmonic summary ---\n")
+cat(sprintf("Bootstrap winner (g3_emp): %s\n",
+            boot_seas2$method[which.min(boot_seas2$g3_empirical)]))
+cat(sprintf("LOO-MSE  winner          : %s\n",
+            loo_s2_df$method[which.min(loo_s2_df$loo_mse)]))
+for (m in c("OLS", "PMM2", "PMM3", "MLE_TN")) {
+  cat(sprintf("  %-8s  g3_emp=%6.4f (%+.1f%%)  LOO_rel=%.5f (%+.2f%%)\n",
+              m,
+              boot_seas2$g3_empirical[boot_seas2$method == m],
+              boot_seas2$delta_pct[boot_seas2$method == m],
+              loo_s2_df$rel_ols[loo_s2_df$method == m],
+              loo_s2_df$delta_pct[loo_s2_df$method == m]))
+}
+cat("\n")
+
+# ===========================================================================
 # Save summary table
 # ===========================================================================
 summary_df <- do.call(rbind, all_results)
