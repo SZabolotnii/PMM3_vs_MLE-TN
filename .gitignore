@@ -19,3 +19,11 @@ results/*.html
 
 # macOS
 .DS_Store
+
+# Office lock files
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# Submission preview renders (throwaway)
+submission/_preview/
