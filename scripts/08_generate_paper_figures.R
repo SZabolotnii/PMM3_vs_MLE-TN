@@ -149,9 +149,13 @@ fig3 <- ggplot(pmm3_mc, aes(x = factor(n), y = g3_empirical)) +
   geom_col(fill = "#2166AC", alpha = 0.75, width = 0.6) +
   geom_hline(aes(yintercept = g3), colour = "#D73027",
              linetype = "dashed", linewidth = 1) +
-  geom_text(aes(y = g3 + 0.04,
-                label = sprintf("g₃=%.3f", g3)),
-            colour = "#D73027", size = 2.8) +
+  # One label per panel (the per-bar version overlapped the dashed line).
+  geom_label(data = distinct(pmm3_mc, lam_label, g3),
+             aes(x = 4.5, y = g3 + 0.08,
+                 label = sprintf("theory %.3f", g3)),
+             inherit.aes = FALSE, hjust = 1,
+             colour = "#D73027", fill = "white", border.colour = NA,
+             label.padding = unit(0.1, "lines"), size = 3.2) +
   facet_wrap(~ lam_label, nrow = 2) +
   labs(
     x        = "Sample size n",
@@ -160,7 +164,9 @@ fig3 <- ggplot(pmm3_mc, aes(x = factor(n), y = g3_empirical)) +
   theme_bw(base_size = 11) +
   theme(strip.background = element_rect(fill = "#EEF4FB"))
 
-save_fig(fig3, "Fig3_g3_convergence.png", width = 18, height = 11)
+# 18 x 9.8 cm keeps the aspect ratio the 10-page paper was laid out with
+# (the old 18 x 11 export minus the clipped title band).
+save_fig(fig3, "Fig3_g3_convergence.png", width = 18, height = 9.8)
 
 # ── Fig 4: ARE comparison (PMM3 vs MLE-TN vs OLS) ────────────────────────────
 cat("=== Fig 4: ARE comparison ===\n")
@@ -187,7 +193,8 @@ fig4 <- ggplot(are_df, aes(x = factor(n), y = are, fill = Method)) +
   theme(legend.position   = "bottom",
         strip.background  = element_rect(fill = "#EEF4FB"))
 
-save_fig(fig4, "Fig4_ARE_comparison.png", width = 18, height = 12)
+# 18 x 10.8 cm: same reasoning as Fig 3.
+save_fig(fig4, "Fig4_ARE_comparison.png", width = 18, height = 10.8)
 
 # ── Fig 5: Iris versicolor — residual distribution ───────────────────────────
 # Not used in the 10-page ITEST 2026 version (moved to the supplement).
