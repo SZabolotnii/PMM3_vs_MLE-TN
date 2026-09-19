@@ -20,11 +20,19 @@ cat("╚════════════════════════
 # --- Setup -------------------------------------------------------------------
 # Set working directory to project root (handles both source() and Rscript)
 if (!exists("PROJECT_ROOT")) {
-  script_dir <- tryCatch(
-    dirname(sys.frame(1)$ofile),
-    error = function(e) getwd()
-  )
-  PROJECT_ROOT <- normalizePath(file.path(script_dir, ".."), mustWork = FALSE)
+  # source("scripts/run_all.R") exposes the script path via ofile;
+  # Rscript scripts/run_all.R passes it as --file=. Fall back to the
+  # working directory, which the usage notes require to be the project root.
+  script_file <- tryCatch(sys.frame(1)$ofile, error = function(e) NULL)
+  if (is.null(script_file)) {
+    file_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+    if (length(file_arg) == 1) script_file <- sub("^--file=", "", file_arg)
+  }
+  PROJECT_ROOT <- if (is.null(script_file)) {
+    getwd()
+  } else {
+    normalizePath(file.path(dirname(script_file), ".."), mustWork = FALSE)
+  }
 }
 setwd(PROJECT_ROOT)
 cat("Working directory:", getwd(), "\n\n")
@@ -84,6 +92,8 @@ print(bimodal)
 
 # --- Figures -----------------------------------------------------------------
 cat("\n--- Saving Figures ---\n")
+# results/figures/ is git-ignored, so a fresh clone does not have it.
+dir.create(CFG$paths$results_figures, showWarnings = FALSE, recursive = TRUE)
 tryCatch({
   save_plot(plot_efficiency_curve(T1),       "fig1_efficiency_curve.png")
   save_plot(plot_are_comparison(mc_results), "fig2_are_comparison.png")
