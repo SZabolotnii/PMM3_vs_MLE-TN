@@ -89,3 +89,6 @@
 
 Ті самі правки внесено в `paper/draft_uk.md`. Вихідний 14-сторінковий
 `SZabolotnii_ITEST_paper+++ref.docx` і файли ITONT2026 не змінювалися.
+- **Розд. 3.1** (додано пізніше того ж дня): «the full numeric table is provided as
+  supplementary material» → «the full numeric table, the code and all stored results are
+  available at https://doi.org/10.5281/zenodo.22849684». Обсяг — 10 сторінок.

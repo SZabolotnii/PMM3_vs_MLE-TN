@@ -6,7 +6,10 @@ Two-piece Normal Distributed Errors*, submitted to ITEST 2026.
 
 **Repository:** https://github.com/SZabolotnii/PMM3_vs_MLE-TN
 
-**DOI:** _to be assigned by Zenodo_
+**DOI:** [10.5281/zenodo.22849684](https://doi.org/10.5281/zenodo.22849684) (v1.0.0; concept DOI
+[10.5281/zenodo.22849683](https://doi.org/10.5281/zenodo.22849683)).
+The archived repository is
+<https://github.com/SZabolotnii/Ku-PMM3-MLE-TN-code-supplement>: it adds the R code to these files.
 
 The files are stored results of the study pipeline. Nothing here is hand-edited:
 `scripts/09_build_supplement.R` copies them from `results/tables/`, and

@@ -73,10 +73,12 @@ ARE ≈ 1.04, для logistic ≈ 1.07, для uniform ≈ 3.3 (асимптот
 - [x] `supplement/` зібрано скриптом `scripts/09_build_supplement.R`: 8 CSV
       (T1, T2, T6, T7, iris, три real_data), `README.md` з описом колонок,
       `SESSION_INFO.txt` (версії R і пакетів), `MD5SUMS.txt`
-- [ ] залити на Zenodo, отримати DOI, вписати його в `supplement/README.md`
-- [ ] вставити DOI у два місця в docx: розд. 3.1 («the full numeric table is provided
-      as supplementary material») і в кінці розд. 3.2
-
+- [x] опубліковано: GitHub <https://github.com/SZabolotnii/Ku-PMM3-MLE-TN-code-supplement>
+      (код + збережені результати + `scripts/verify_stored_results.R`), реліз v1.0.0 →
+      Zenodo DOI **10.5281/zenodo.22849684** (concept DOI 10.5281/zenodo.22849683);
+      DOI вписано в `supplement/README.md`
+- [x] DOI вставлено в розд. 3.1 docx. Друге місце з TODO в тексті не знайшлося:
+      слово «supplementary» у 10-сторінковій версії є лише в розд. 3.1
 ---
 
 ## 2. Генерація рисунків
