@@ -92,3 +92,7 @@
 - **Розд. 3.1** (додано пізніше того ж дня): «the full numeric table is provided as
   supplementary material» → «the full numeric table, the code and all stored results are
   available at https://doi.org/10.5281/zenodo.22849684». Обсяг — 10 сторінок.
+- **Нумерація рівнянь**: кешовані номери полів SEQ equation були (2)–(9) після вилучення
+  дубльованого рівняння g₃; виставлено (1)–(8). Посилань на рівняння за номером у тексті немає.
+- **Властивості файлу**: назва документа і автори замість залишків шаблону Springer
+  («Formats and macros for Springer Lecture Notes», Markus Richter).
