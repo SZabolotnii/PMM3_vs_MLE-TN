@@ -8,5 +8,8 @@
       "Bash(Rscript scripts/08_co2_analysis.R)",
       "Bash(Rscript -e \"cat\\(getwd\\(\\)\\)\")"
     ]
-  }
+  },
+  "disabledMcpjsonServers": [
+    "insforge"
+  ]
 }
