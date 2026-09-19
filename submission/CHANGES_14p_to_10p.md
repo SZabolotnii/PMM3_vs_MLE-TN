@@ -60,3 +60,32 @@
 
 Резерв, якщо в Word не влізе: зменшити Рис. 2 і 3 з 10.0 см до 9.5 см ширини
 (−0.4 стор.), або перевести таблицю робастності в текст (−0.15 стор.).
+
+---
+
+## Виправлення 2026-09-19 (після перевірки відтворюваності)
+
+Причина: `results/tables/T6_misspecification.csv` і `T7_bimodal_test.csv` були
+пораховані заглушкою PMM3 (повертала OLS). Після чистого прогону `run_all.R`
+вони замінені на справжні результати. Подробиці в `TODO_ITEST_submission.md`, розд. 0.
+Обсяг не змінився: 10 сторінок, розбиття по сторінках те саме (LibreOffice).
+
+- **Abstract**: «PMM3 is shown to be robust …» → «Under misspecification PMM3 never
+  falls below OLS (ARE from 1.02 to 2.68), whereas MLE-TN can be less efficient than OLS».
+- **Вступ**: рівняння-об'єкт MathType «λ ≫ 0.707» замінено на рівняння Word «λ ≫ 1».
+- **Внесок (iii)**: «maintains ARE ≈ 1» → «does not fall below OLS … (ARE from 1.02 to 2.68)».
+- **Розд. 2.2, 2.6, підпис Рис. 1**: межа бімодальності λ > 1/√2 → **λ > 1**.
+- **Рис. 1–3** перевставлено з `paper/figures/` (вихід R, без заголовків; на Рис. 1
+  лінія межі тепер на λ = 1; на Рис. 2 підпис теоретичного g₃ — один на панель).
+- **Розд. 3.2, iris**: g₃ theor = 0.517 → **0.483** (0.517 — це частка зниження).
+- **Розд. 3.2, negative example**: «four further … g₃ emp ∈ [0.97, 1.03]» →
+  «Five further … g₃ emp ∈ [1.03, 1.36] and LOO-MSE PMM3/OLS ≤ 1.013».
+- **Табл. 2**, ARE(PMM3): 1.000 ×4 → 2.685 / 1.061 / 1.023 / 1.047.
+- **Розд. 3.3**: абзац про робастність переписано під нові числа; тест збіжності —
+  M = 200 (було 500), 2.8–3.7 ітерації, |bias| < 0.003 (було 0.022).
+- **Conclusions**: п. «Robustness» — без «ARE ≈ 1»; п. «Empirical threshold» —
+  «equivalent to OLS» → «no practical advantage over OLS (prediction error within 2%)».
+  Прибрано випадковий символ табуляції всередині цього речення.
+
+Ті самі правки внесено в `paper/draft_uk.md`. Вихідний 14-сторінковий
+`SZabolotnii_ITEST_paper+++ref.docx` і файли ITONT2026 не змінювалися.
